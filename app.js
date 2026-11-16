@@ -95,7 +95,7 @@ async function submitQuiz(){
   const a={kind:'attempt',id:z.id,mode:z.mode,exam:z.exam,part:z.part,chs:z.chs,startedAt:z.startedAt,dur:Math.round(dur),total:items.length,correct,score:Math.round(correct/items.length*100),items};
   ui.quiz=null; clearDraft(); clearInterval(tick);
   await saveAttempt(a);
-  ui.report=a; ui.reportFilter='all'; ui.view='report'; render(); window.scrollTo(0,0);
+  ui.report=a; ui.reportFilter='all'; ui.view='report'; ui.celebrate=a.score>70; render(); window.scrollTo(0,0);
 }
 
 // ---------- rendering ----------
@@ -178,10 +178,17 @@ function updTimer(){
   if(z.limit){const left=z.limit-e; el.textContent=fmt(left); el.classList.toggle('hot',left<600); if(left<=0) submitQuiz();}
   else el.textContent=fmt(e);
 }
+function viewCelebrate(score){
+  return `<div class="cele" id="cele" role="dialog" aria-modal="true" aria-labelledby="cele-t"><div class="cele-box">
+    <div class="cele-heart" aria-hidden="true">❤</div>
+    <p id="cele-t" class="cele-t">כל הכבוד פיצית שלי<br>אני גאה בך</p>
+    <p class="cele-s">ציון ${score} בתרגול הזה</p>
+    <button class="btn" id="cele-close">תודה ❤</button></div></div>`;
+}
 function viewReport(a){
   const per={}; a.items.forEach(i=>{(per[i.c]=per[i.c]||{n:0,ok:0}).n++; if(i.ok)per[i.c].ok++});
   const skipped=a.items.filter(i=>i.chosen===null).length;
-  let h=header();
+  let h=(ui.celebrate?viewCelebrate(a.score):'')+header();
   h+=`<section class="card"><div class="score"><div class="big">${a.score}</div><div><span class="pill ${a.score>=60?'pass':'fail'}">${a.score>=60?'מעל ציון המעבר':'מתחת לציון המעבר'}</span><div class="note" style="margin-top:6px">${a.correct} נכונות מתוך ${a.total}${skipped?` · ${skipped} לא נענו`:''} · זמן ${fmt(a.dur)} · ${MODE_NAME[a.mode]||'תרגול'}${a.exam?' '+a.exam:''} ${PARTS[a.part].name} · ${fdate(a.startedAt)}</div><div class="note">ממוצע ${a.total?fmt(a.dur/a.total):'—'} לשאלה${a.mode!=='practice'?` (בבחינה: ${fmt(PARTS[a.part].simMin*60/40)} לשאלה)`:''}</div></div></div>
   <div class="bars" style="margin-top:16px">${Object.keys(per).map(c=>{const p=Math.round(per[c].ok/per[c].n*100);return `<div class="bar"><span>${CH[c]?CH[c].name:c}</span><span class="t"><i class="${p<60?'low':''}" style="width:${p}%"></i></span><span class="v">${per[c].ok}/${per[c].n}</span></div>`}).join('')}</div>
   <div class="row" style="margin-top:16px"><button class="btn" id="home">חזרה למסך הראשי</button>${ui.delAsk===a.id?`<span class="note">למחוק את המבחן מההיסטוריה?</span><button class="btn danger" id="del">למחוק</button><button class="btn ghost" id="nodel">לא</button>`:`<button class="btn ghost" id="askdel">למחוק מההיסטוריה</button>`}</div></section>`;
@@ -218,8 +225,9 @@ document.addEventListener('click',e=>{
   else if(b.id==='cancel'){ui.confirm=false;render()}
   else if(b.id==='submit'){submitQuiz()}
   else if(b.id==='quit'){ui.view='home';render()}
-  else if(d.open){ui.report=S.attempts.find(a=>a.id===d.open);ui.reportFilter='all';ui.delAsk=null;ui.view='report';render();window.scrollTo(0,0)}
+  else if(d.open){ui.celebrate=false;ui.report=S.attempts.find(a=>a.id===d.open);ui.reportFilter='all';ui.delAsk=null;ui.view='report';render();window.scrollTo(0,0)}
   else if(d.rf){ui.reportFilter=d.rf;render()}
+  else if(b.id==='cele-close'){ui.celebrate=false;render()}
   else if(b.id==='home'){ui.view='home';ui.delAsk=null;render();window.scrollTo(0,0)}
   else if(b.id==='askdel'){ui.delAsk=ui.report.id;render()}
   else if(b.id==='nodel'){ui.delAsk=null;render()}
