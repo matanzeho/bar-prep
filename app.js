@@ -2,9 +2,11 @@ const Q = window.QBASE.concat(window.QEXTRA);
 const BANK = {}; Q.forEach(([id,c,q,o,e,s])=>{BANK[id]={id,c,q,o,e,s,a:0,part:CH[c].part}});
 const LSO='barprep.official.v1';
 const OFF = (()=>{ if(window.QOFFICIAL) return window.QOFFICIAL; try{const v=JSON.parse(localStorage.getItem(LSO)||'null');return (v&&Array.isArray(v.items))?v.items:[]}catch(e){return []} })();
-OFF.forEach(x=>{BANK[x.id]={id:x.id,c:x.c,q:x.q,o:x.o,a:x.a,e:'',s:x.ref,part:x.part,off:true,exam:x.exam,n:x.n}});
+const OFFEXP=window.OFFEXP||{};
+OFF.forEach(x=>{BANK[x.id]={id:x.id,c:x.c,q:x.q,o:x.o,a:x.a,e:OFFEXP[x.id]||x.e||'',s:x.ref,part:x.part,off:true,exam:x.exam,n:x.n}});
 const EXAMS = []; OFF.forEach(x=>{const k=x.exam+'|'+x.part; if(!EXAMS.includes(k)) EXAMS.push(k)});
-const MODE_NAME = {sim:'סימולציה',practice:'תרגול',official:'מבחן רשמי'};
+const MODE_NAME = {sim:'סימולציה',practice:'תרגול',official:'מבחן רשמי',review:'חזרה'};
+PARTS.mix={name:'חזרה מכל הפרקים',simQ:0,simMin:0};
 const LS='barprep.attempts.v1', LSD='barprep.draft.v1';
 
 // ---------- storage: JSON file on this computer (desktop app), browser storage as fallback ----------
@@ -43,10 +45,31 @@ function wrongSet(){
   return new Set(Object.keys(last).filter(k=>!last[k]&&BANK[k]));
 }
 
+// ---------- spaced review ----------
+// A question enters review once it is answered wrong (or skipped). It comes back 1 day later,
+// then 3 days, then 7 days after each correct answer; three correct answers in a row retire it.
+const DAY=86400000, STEPS=[1,3,7];
+function reviewState(now=Date.now()){
+  const hist={};
+  [...S.attempts].sort((a,b)=>a.startedAt-b.startedAt).forEach(a=>a.items.forEach(it=>{(hist[it.qid]=hist[it.qid]||[]).push({t:a.startedAt+(a.dur||0)*1000,ok:it.ok})}));
+  const due=[], waiting=[], learned=[];
+  for(const id in hist){
+    if(!BANK[id]) continue;
+    const h=hist[id]; if(h.every(x=>x.ok)) continue;
+    let k=0; for(let i=h.length-1;i>=0&&h[i].ok;i--) k++;
+    if(k>=STEPS.length){learned.push(id);continue}
+    const at=h[h.length-1].t+STEPS[k]*DAY;
+    (at<=now?due:waiting).push({id,at});
+  }
+  due.sort((a,b)=>a.at-b.at);
+  return {due:due.map(x=>x.id),waiting:waiting.length,learned:learned.length,next:waiting.length?Math.min(...waiting.map(x=>x.at)):null};
+}
+
 // ---------- quiz ----------
 function startQuiz(opts){
   let pool;
-  if(opts.mode==='official'){ pool=OFF.filter(x=>x.exam===opts.exam&&x.part===opts.part).sort((a,b)=>a.n-b.n).map(x=>BANK[x.id]); }
+  if(opts.mode==='review'){ pool=reviewState().due.slice(0,opts.count).map(id=>BANK[id]); }
+  else if(opts.mode==='official'){ pool=OFF.filter(x=>x.exam===opts.exam&&x.part===opts.part).sort((a,b)=>a.n-b.n).map(x=>BANK[x.id]); }
   else {
   const src=opts.src||'all';
   pool=Object.values(BANK).filter(q=>q.part===opts.part&&(src==='all'||(src==='off')===!!q.off));
@@ -108,6 +131,10 @@ function viewHome(){
     <div class="tile"><b>${A.length?A[0].score:'—'}</b><span>ציון אחרון</span></div>
     <div class="tile"><b>${totQ?fmt(totT):'—'}</b><span>זמן תרגול כולל · ${totQ} שאלות</span></div>
   </section>`;
+  const rv=reviewState();
+  h+=`<section class="card"><div class="row" style="justify-content:space-between"><div><h2 style="margin:0">חזרה יומית</h2>
+    <p class="note" style="margin:4px 0 0">${rv.due.length?`<b>${rv.due.length}</b> שאלות שטעית בהן מחכות לחזרה היום.`:(rv.waiting?`אין חזרה להיום. החזרה הבאה: ${new Date(rv.next).toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'numeric'})}.`:'שאלות שתטעי בהן יחזרו אלייך אחרי יום, 3 ימים ושבוע, עד שתעני עליהן נכון שלוש פעמים ברצף.')}${rv.waiting||rv.learned?` · ${rv.waiting} בתהליך · ${rv.learned} נלמדו`:''}</p></div>
+    ${rv.due.length?`<button class="btn" id="review">לחזרה${rv.due.length>20?' (20 ראשונות)':''}</button>`:''}</div></section>`;
   h+=`<section><h2>סימולציה בתנאי בחינה</h2><div class="sims">
     <div class="sim"><b>חלק ב׳ · דין דיוני</b><small>40 שאלות, 100 דקות, הגשה אוטומטית בתום הזמן</small><button class="btn" data-sim="p">להתחיל סימולציה</button></div>
     <div class="sim"><b>חלק ג׳ · דין מהותי</b><small>40 שאלות, 160 דקות, הגשה אוטומטית בתום הזמן</small><button class="btn" data-sim="s">להתחיל סימולציה</button></div>
@@ -163,7 +190,7 @@ function viewReport(a){
     const order=it.order||[0,1,2,3];
     h+=`<div class="rq"><span class="tag ${it.ok?'ok':it.chosen===null?'skip':'no'}">${n+1} · ${it.ok?'נכון':it.chosen===null?'לא נענתה':'שגוי'} · ${CH[q.c].name}</span><p class="qtext">${esc(q.q)}</p>
     ${order.map((oi,k)=>{const cls=oi===q.a?'right':(oi===it.chosen?'wrong':'');return `<div class="o ${cls}">${LET[k]}. ${esc(q.o[oi])}${oi===q.a?(q.off?' · תשובת הלשכה':' · התשובה הנכונה'):oi===it.chosen?' · התשובה שלך':''}</div>`}).join('')}
-    ${q.off?`<div class="src">מבחן הלשכה ${esc(q.exam)}, חלק ${q.part==='p'?'ב׳':'ג׳'}, שאלה ${q.n} · סימוכין לפי מפתח הלשכה: ${esc(q.s)}</div>`:`<div class="exp">${esc(q.e)}</div><div class="src">מקור: ${esc(q.s)}</div>`}</div>`});
+    ${q.off&&q.e?`<div class="exp"><span class="tag">הסבר (לא רשמי, נכתב בידי Claude)</span><br>${esc(q.e)}</div>`:''}${q.off?`<div class="src">מבחן הלשכה ${esc(q.exam)}, חלק ${q.part==='p'?'ב׳':'ג׳'}, שאלה ${q.n} · סימוכין לפי מפתח הלשכה: ${esc(q.s)}</div>`:`<div class="exp">${esc(q.e)}</div><div class="src">מקור: ${esc(q.s)}</div>`}</div>`});
   h+=`</section>`;
   return h;
 }
@@ -176,6 +203,7 @@ document.addEventListener('click',e=>{
   else if(d.cnt){ui.count=+d.cnt;render()}
   else if(d.ow){ui.onlyWrong=d.ow==='1';render()}
   else if(d.sim){startQuiz({mode:'sim',part:d.sim,count:PARTS[d.sim].simQ})}
+  else if(b.id==='review'){startQuiz({mode:'review',part:'mix',count:20})}
   else if(b.id==='go'){startQuiz({mode:'practice',part:ui.part,chs:[...ui.chs],count:ui.count,onlyWrong:ui.onlyWrong,src:ui.src})}
   else if(d.src){ui.src=d.src;render()}
   else if(d.off){const [ex,p]=d.off.split('|');startQuiz({mode:'official',part:p,exam:ex,count:40})}
