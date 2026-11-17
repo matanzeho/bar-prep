@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'">
 <title>מתרגלת לשכה</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1f5a46">
+<meta name="theme-color" content="#f6d6e1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="מתרגלת לשכה">
@@ -19,16 +19,16 @@ html{-webkit-text-size-adjust:100%}
 @media (max-width:560px){.qbar{padding-top:calc(env(safe-area-inset-top,0px) + 6px)}.timer{font-size:1.25rem}}
 /* Layout: one column, case-file feel — binding green, paper, oxblood stamp for wrong answers */
 :root{
-  --bg:#f3f4ef; --paper:#ffffff; --ink:#1d2621; --muted:#5f6b63; --line:#d9ddd3;
-  --accent:#1f5a46; --accent-soft:#e2eee8; --bad:#a3322b; --bad-soft:#f6e3e1; --good:#2c7a4b; --good-soft:#e0f1e6; --warn:#a46a10;
+  --bg:#fcf1f4; --paper:#fffafb; --ink:#3a2430; --muted:#7a5d6d; --line:#f0d5de;
+  --accent:#b8426e; --accent-soft:#fbe1ea; --bad:#a4262c; --bad-soft:#fde6dc; --good:#2f7d55; --good-soft:#e3f3ea; --warn:#a46a10;
   --display:'Frank Ruhl Libre','FrankRuehl','David',Georgia,serif; --body:'Assistant','Segoe UI',Arial,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#141a17; --paper:#1c2420; --ink:#e7ece8; --muted:#9aa79f; --line:#2f3a34;
-  --accent:#6fc3a2; --accent-soft:#1f3a30; --bad:#ec8a80; --bad-soft:#3b2220; --good:#7fd19c; --good-soft:#1d3526; --warn:#e2b25a; color-scheme:dark}}
+  --bg:#1e1519; --paper:#2a1d23; --ink:#f6e8ee; --muted:#c4a3b1; --line:#43303a;
+  --accent:#f2a7c3; --accent-soft:#4a2a38; --bad:#ff9b8f; --bad-soft:#4a2420; --good:#8fd8a8; --good-soft:#1f3a2a; --warn:#e9b866; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#141a17; --paper:#1c2420; --ink:#e7ece8; --muted:#9aa79f; --line:#2f3a34;
-  --accent:#6fc3a2; --accent-soft:#1f3a30; --bad:#ec8a80; --bad-soft:#3b2220; --good:#7fd19c; --good-soft:#1d3526; --warn:#e2b25a; color-scheme:dark}
+  --bg:#1e1519; --paper:#2a1d23; --ink:#f6e8ee; --muted:#c4a3b1; --line:#43303a;
+  --accent:#f2a7c3; --accent-soft:#4a2a38; --bad:#ff9b8f; --bad-soft:#4a2420; --good:#8fd8a8; --good-soft:#1f3a2a; --warn:#e9b866; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;direction:rtl}
 .wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:20px 60px}
@@ -110,7 +110,7 @@ td.num{font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .msg{font-size:.82rem;color:var(--good);margin-top:2px}
 .store .link{font-size:.82rem;margin-inline-start:12px}
-.cele{position:fixed;inset:0;z-index:50;background:rgba(20,26,23,.55);display:grid;place-items:center;padding:16px}
+.cele{position:fixed;inset:0;z-index:50;background:rgba(58,36,48,.5);display:grid;place-items:center;padding:16px}
 .cele-box{background:var(--paper);border-radius:16px;padding:28px 24px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:cele-in .45s ease-out}
 .cele-heart{font-size:3.4rem;line-height:1;color:var(--bad);animation:cele-beat 1.2s ease-in-out infinite}
 .cele-t{font-family:var(--display);font-size:1.7rem;line-height:1.35;margin:14px 0 6px;text-wrap:balance}
